@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.8;
 
+/// you are not the owner
 error NotOwner();
 
 contract TinyBank {
@@ -14,8 +15,7 @@ contract TinyBank {
     }
 
     modifier onlyOwner() {
-        // require(msg.sender == owner);
-        if (msg.sender != i_owner) revert NotOwner();
+        if (msg.sender != bankManager) revert NotOwner();
         _;
     }
 
@@ -26,38 +26,30 @@ contract TinyBank {
 
     function withdraw() public payable onlyOwner {
         for (
-            uint256 funderIndex = 0;
-            funderIndex < funders.length;
-            funderIndex++
+            uint256 depositorIndex = 0;
+            depositorIndex < depositors.length;
+            depositorIndex++
         ) {
-            address funder = funders[funderIndex];
-            addressToAmountFunded[funder] = 0;
+            address depositor = depositors[depositorIndex];
+            addressToAmountDeposited[depositor] = 0;
         }
-        funders = new address[](0);
+        depositors = new address[](0);
+
         (bool callSuccess, ) = payable(msg.sender).call{
             value: address(this).balance
         }("");
         require(callSuccess, "Call failed");
     }
 
+    function getBankBalance() public view onlyOwner returns(uint256) {
+        return address(this).balance;
+    }
+
     fallback() external payable {
-        fund();
+        deposit();
     }
 
     receive() external payable {
-        fund();
+        deposit();
     }
 }
-
-// Concepts we didn't cover yet (will cover in later sections)
-// 1. Enum
-// 2. Events
-// 3. Try / Catch
-// 4. Function Selector
-// 5. abi.encode / decode
-// 6. Hash with keccak256
-// 7. Yul / Assembly
-
-// Get funds from users
-// Withdraw funds
-// set a minimum funding value in USD
